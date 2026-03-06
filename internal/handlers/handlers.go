@@ -1,1 +1,71 @@
 package handlers
+
+import (
+	"net/http"
+	"yourproject/service"
+	"yourproject/morse"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
+)
+
+// RootHandler — хендлер для корневого пути "/"
+func RootHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
+}
+
+// UploadHandler — хендлер для загрузки файла с данными
+func UploadHandler(w http.ResponseWriter, r *http.Request) {
+	// Ограничение для парсинга данных формы
+	r.ParseMultipartForm(10 << 20) // 10MB
+
+	// Получаем файл из формы
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		log.Printf("Error getting file: %v", err)
+		http.Error(w, "Error processing file", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Читаем содержимое файла
+	fileContent, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Printf("Error reading file: %v", err)
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		return
+	}
+
+	// Преобразуем данные с помощью функции AutoConvert
+	convertedContent, err := service.AutoConvert(string(fileContent))
+	if err != nil {
+		log.Printf("Error converting data: %v", err)
+		http.Error(w, "Error converting data", http.StatusInternalServerError)
+		return
+	}
+
+	// Генерация имени файла для записи
+	fileName := time.Now().UTC().String() + filepath.Ext("txt")
+
+	// Запись в новый файл
+	outputFile, err := os.Create(fileName)
+	if err != nil {
+		log.Printf("Error creating file: %v", err)
+		http.Error(w, "Error creating file", http.StatusInternalServerError)
+		return
+	}
+	defer outputFile.Close()
+
+	// Записываем результат в файл
+	_, err = outputFile.WriteString(convertedContent)
+	if err != nil {
+		log.Printf("Error writing to file: %v", err)
+		http.Error(w, "Error writing to file", http.StatusInternalServerError)
+		return
+	}
+
+	// Возвращаем результат
+	w.Write([]byte("Conversion successful! Result saved to: " + fileName))
+}
