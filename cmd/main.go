@@ -1,10 +1,11 @@
 package main
 
-import (
+import import (
 	"log"
 	"net/http"
-	"yourproject/server"
+	"yourproject/internal/server"
 )
+
 
 func main() {
 	// Создаем логгер
