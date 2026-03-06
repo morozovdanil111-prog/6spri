@@ -1,9 +1,9 @@
 package main
 
-import  (
-	"log"
-	"net/http"
-	"yourproject/internal/server"
+import (
+    "log"
+    "net/http"
+    "6spri/internal/server"  
 )
 
 
